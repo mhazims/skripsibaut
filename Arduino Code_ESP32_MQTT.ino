@@ -21,8 +21,8 @@ WiFiClientSecure espClient;
 PubSubClient client(espClient);
 
 // ================= PIN =================
-const int SERVO_A_PIN = 13;   // Flange
-const int SERVO_B_PIN = 12;   // Hexagonal
+const int SERVO_A_PIN = 13;   // Flange Bolt
+const int SERVO_B_PIN = 12;   // Hex Bolt
 const int SERVO_C_PIN = 14;   // Socket Cap
 
 const int IR_1_PIN = 32;
@@ -111,20 +111,21 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
     return;
   }
 
-  String type = doc["type"];
-
+  // Mengambil data dari key "bolt_type" sesuai yang dikirim mqtt_client.js
+  String type = doc["bolt_type"];
   currentType = type;
 
-  if (type == "Flange") {
+  // Mencocokkan nama klasifikasi dengan yang ada di Python/JS
+  if (type == "Flange Bolt") {
     targetServo = 1;
   } 
-  else if (type == "Hexagonal") {
+  else if (type == "Hex Bolt") {
     targetServo = 2;
   } 
   else if (type == "Socket Cap") {
     targetServo = 3;
   } 
-  else if (type == "Carriage") {
+  else if (type == "Carriage Bolt") {
     targetServo = 0;
   } 
   else {
@@ -144,27 +145,31 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
 
 // ================= PROSES SORTIR =================
 void prosesSortir() {
+  // Klasifikasi: Flange Bolt -> IR 1 -> Servo A
   if (targetServo == 1 && digitalRead(IR_1_PIN) == IR_DETECTED) {
-    Serial.println("IR1 aktif → Servo A");
+    Serial.println("IR1 aktif → Servo A (Flange Bolt)");
     activateServo(servoA);
     finishSorting("Servo A");
   }
 
+  // Klasifikasi: Hex Bolt -> IR 2 -> Servo B
   else if (targetServo == 2 && digitalRead(IR_2_PIN) == IR_DETECTED) {
-    Serial.println("IR2 aktif → Servo B");
+    Serial.println("IR2 aktif → Servo B (Hex Bolt)");
     activateServo(servoB);
     finishSorting("Servo B");
   }
 
+  // Klasifikasi: Socket Cap -> IR 3 -> Servo C
   else if (targetServo == 3 && digitalRead(IR_3_PIN) == IR_DETECTED) {
-    Serial.println("IR3 aktif → Servo C");
+    Serial.println("IR3 aktif → Servo C (Socket Cap)");
     activateServo(servoC);
     finishSorting("Servo C");
   }
 
+  // Klasifikasi: Carriage Bolt -> Tunggu sampai ujung (IR 3) -> Jatuh tanpa servo
   else if (targetServo == 0 && digitalRead(IR_3_PIN) == IR_DETECTED) {
-    Serial.println("Carriage → tanpa servo → jatuh ke box ujung");
-    delay(800);
+    Serial.println("IR3 aktif → Carriage Bolt lewat → jatuh ke box ujung tanpa servo");
+    delay(800); // Waktu jeda hingga benar-benar masuk kotak
     finishSorting("No Servo");
   }
 }
@@ -234,7 +239,7 @@ void reconnectMQTT() {
     } else {
       Serial.print("gagal, rc=");
       Serial.println(client.state());
-      delay(5000);
+      delay(5000); // Tunggu 5 detik sebelum mencoba lagi
     }
   }
 }
