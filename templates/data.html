@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analisis Data Sortir</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body class="bg-gray-900 text-gray-200 antialiased">
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8">
+        
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-teal-300 pb-2">Analisis Data Historis</h1>
+            <a href="{{ url_for('index') }}" class="mt-4 inline-block text-blue-400 hover:text-blue-300">&larr; Kembali ke Dasbor Utama</a>
+        </header>
+
+        <main class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div class="card rounded-xl p-6 shadow-2xl">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-2xl font-semibold">Ringkasan per Tanggal</h2>
+                    <form id="date-filter-form" class="flex items-center gap-2">
+                        <input type="date" id="date-input" name="date" value="{{ selected_date }}" class="bg-gray-700 text-white rounded-md p-2 border-none">
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md">Filter</button>
+                    </form>
+                </div>
+
+                <table class="w-full text-left">
+                    <thead>
+                        <tr class="border-b border-gray-700">
+                            <th class="py-2">Tipe Baut</th>
+                            <th class="py-2 text-right">Jumlah</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for bolt, count in today_counts.items() %}
+                        <tr class="border-b border-gray-800">
+                            <td class="py-3">{{ bolt }}</td>
+                            <td class="py-3 text-right font-bold text-xl">{{ count }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr class="text-blue-300">
+                            <td class="pt-4 font-semibold text-lg">TOTAL</td>
+                            <td class="pt-4 text-right font-bold text-2xl">{{ today_total }}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+
+            <div class="card rounded-xl p-6 shadow-2xl">
+                <h2 class="text-2xl font-semibold mb-4">Total Sortir per Hari (30 Hari Terakhir)</h2>
+                <div class="relative h-96">
+                    <canvas id="dailyChart"></canvas>
+                </div>
+            </div>
+        </main>
+    </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+    // JavaScript untuk grafik tetap sama, tidak perlu diubah
+    try {
+        const response = await fetch('/api/daily_summary');
+        const data = await response.json();
+
+        const ctx = document.getElementById('dailyChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: data.labels,
+                datasets: [{
+                    label: 'Total Baut per Hari', data: data.data,
+                    backgroundColor: 'rgba(59, 130, 246, 0.5)', borderColor: 'rgba(59, 130, 246, 1)', borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true, ticks: { color: '#d1d5db' }, grid: { color: 'rgba(255, 255, 255, 0.1)' } },
+                    x: { ticks: { color: '#9ca3af' }, grid: { display: false } }
+                },
+                plugins: { legend: { display: false } }
+            }
+        });
+    } catch (error) {
+        console.error("Gagal memuat data grafik:", error);
+    }
+});
+</script>
+
+</body>
+</html>
